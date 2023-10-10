@@ -1,0 +1,218 @@
+# STEP TO SEPARATE SEQUENCES WITH 5Gs from the fastq file
+from Bio import SeqIO
+
+input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
+output_file_with_g = "MERGEDAL121122WithGGGGG_2.fastq"
+output_file_without_g = "MERGEDAL121122WithoutGGGGG_2.fastq"
+
+with open(output_file_with_g, 'w') as output_handle_with_g, open(output_file_without_g, 'w') as output_handle_without_g:
+    for i, record in enumerate(SeqIO.parse(input_fastq_file, "fastq")):
+        sequence_data = str(record.seq)[:19]
+
+        if "GGGGG" in sequence_data:
+            output_handle_with_g.write(f"{sequence_data}\n")
+        else:
+            output_handle_without_g.write(f"{sequence_data}\n")
+
+#final script to extract umi from a file with ggggg 06/10
+from Bio import SeqIO
+
+input_txt_file = "MERGEDAL121122WithGGGGG.fastq"
+target_sequence = 'GGGGG'
+output_file = "MERGEDExtractedSequencesUMI12NT.txt"
+sequences_written = 0
+
+with open(input_txt_file, "r") as file, open(output_file, 'w') as output_handle:
+    strings = [line.strip() for line in file]
+    for string in strings:
+        if target_sequence in string[:18]:
+            extracted_sequence = string[:12]
+            output_handle.write(extracted_sequence + "\n")
+            sequences_written += 1
+            print("Extracted Sequence:", extracted_sequence)
+        else:
+            print("Pattern 'GGGGG' not found or is too close to the start of the sequence.")
+
+print(f"Number of sequences written to {output_file}: {sequences_written}")
+
+#SCRIPT TO SEPARATE REPEATINGA ND NON REPEATING STRINGS FROM THE EXTRACTED UMI FILE
+filename = "MERGEDExtractedSequencesUMI12NT.txt"
+
+# Read the strings from the file
+with open(filename, 'r') as file:
+    strings = [line.strip() for line in file]
+
+string_count = {}
+for string in strings:
+    if string in string_count:
+        string_count[string] += 1
+    else:
+        string_count[string] = 1
+
+repeating_strings_count = 0
+non_repeating_strings_count = 0
+
+repeating_filename = "FINAL_repeating_strings_OF_12NTUMI.txt"
+non_repeating_filename = "FINAL_non_repeating_strings_OF_12NTUMI.txt"
+
+repeating_strings = []
+non_repeating_strings = []
+
+# Separate repeating and non-repeating strings
+for string, count in string_count.items():
+    if count > 1:
+        repeating_strings.append((string, count))
+        repeating_strings_count += count
+    else:
+        non_repeating_strings.append((string, count))
+        non_repeating_strings_count += count
+
+repeating_strings.sort(key=lambda x: x[1], reverse=True)
+non_repeating_strings.sort(key=lambda x: x[1], reverse=True)
+
+# Write repeating strings to file with count
+with open(repeating_filename, 'w') as file:
+    for string, count in repeating_strings:
+        file.write(f"{string}: {count}\n")
+
+# Write non-repeating strings to file with count
+with open(non_repeating_filename, 'w') as file:
+    for string, count in non_repeating_strings:
+        file.write(f"{string}: {count}\n")
+
+# Calculate the total number of strings
+total_strings_count = len(strings)
+
+print("Total number of strings:", total_strings_count)
+print("Sum of counts for repeating strings:", repeating_strings_count)
+print("Sum of counts for non-repeating strings:", non_repeating_strings_count)
+
+#final script to separate multiple repeating and strings that are repeating only twice from the total set of repeating strings
+filename = "FINAL_repeating_strings_OF_12NTUMI.txt"
+
+# Read the strings from the file
+with open(filename, 'r') as file:
+    count = 0
+    twostringlist = []
+    multiplestring = []
+    strings = [line.strip() for line in file]
+    for string in strings:
+        parts = string.split(':')
+        if int(parts[1]) == 2:
+            twostringlist.append(parts[0])
+            
+        else:
+            multiplestring.append(parts[0])
+            
+
+with open('FINAL_twostrings.txt', 'w') as file:
+                for i, stringg in enumerate(twostringlist):
+                    print(stringg)
+                    file.write(f"{stringg} \n")
+        
+with open('FINAL_multiplestrings.txt', 'w') as file:
+                for i, stringgg in enumerate(multiplestring):
+                    print(stringgg)
+                    file.write(f"{stringgg} \n")        
+
+#final script to make consensus seqs using multi-processing and outputs a file with percentage of similar seqs with consensus
+from Bio import SeqIO
+from multiprocessing import Pool, Manager
+
+# Function to process a single string
+def process_string(string, seq_number):
+    sequences = []
+    
+    # Open the output file within the process_string function
+    with open("All_con_2.txt", "a") as outfile:
+        for record in SeqIO.parse(input_fastq_file, "fastq"):
+            sequence = str(record.seq)
+            if string in sequence[:12]:
+                sequences.append(sequence)        
+        if sequences:
+            consensus_sequence = calculate_consensus(sequences)
+            percentage_low_mismatch = calculate_percentage_low_mismatch(sequences, consensus_sequence)
+            
+            sequence_header = f">Seq{seq_number.value}"  # Access the shared seq_number using .value
+            outfile.write(f">Seq{seq_number.value} : {len(sequences)} : {percentage_low_mismatch}\n{consensus_sequence}\n")
+            seq_number.value += 1
+
+def calculate_consensus(sequences):
+    length_counts = {}
+    consensus_sequence = ""
+    #print(sequences)
+    for seq in sequences:
+        seq_length = len(seq)
+        if seq_length in length_counts:
+            length_counts[seq_length] += 1
+        else:
+            length_counts[seq_length] = 1
+    most_common_length = max(length_counts, key=length_counts.get)
+    #print(most_common_length)
+    for seq in sequences:
+        if len(seq) == most_common_length:
+            consensus_sequence = ""
+            BASES_CALCULATE = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
+            bases = ["A", "C", "G", "T", "N"]
+            for i in range(len(seq)):
+                for base in bases:
+                    BASES_CALCULATE[base] = 0
+                for j in range(len(sequences)):
+                    if len(sequences[j]) > i:
+                        base = sequences[j][i]
+                        BASES_CALCULATE[base] += 1
+                most_common_base = max(BASES_CALCULATE, key=BASES_CALCULATE.get)
+                consensus_sequence += most_common_base 
+    #print(consensus_sequence)
+    return consensus_sequence
+
+def calculate_percentage_low_mismatch(sequences, consensus_sequence):
+    length_counts = {}
+    seq_list = []
+    mismatch_threshold = 2
+    total_sequences = 0
+    low_mismatch_count = 0  
+    #print(sequences)
+    for seq in sequences:
+        seq_length = len(seq)
+        if seq_length in length_counts:
+            length_counts[seq_length] += 1
+        else:
+            length_counts[seq_length] = 1
+    most_common_length = max(length_counts, key=length_counts.get)
+    #print(most_common_length)
+    for seq in sequences:
+        seq_length = len(seq)
+        if seq_length == most_common_length:
+            seq_list.append(seq)
+    #print(consensus_sequence)   
+    for se in seq_list:
+        mismatch_count = 0
+        for i in range(len(se)):
+            if se[i] != consensus_sequence[i]:
+                mismatch_count += 1
+        #print(mismatch_count)
+        if mismatch_count <= mismatch_threshold:
+            low_mismatch_count += 1
+    #print(low_mismatch_count)
+    percentage_low_mismatch = (low_mismatch_count / len(seq_list)) * 100 if len(seq_list) > 0 else 0
+    #print(percentage_low_mismatch)
+    return percentage_low_mismatch
+
+if __name__ == "__main__":
+    input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
+    
+    with open("FINAL_multiplestrings.txt", 'r') as file:
+        strings = [line.strip() for line in file]
+    
+    # Number of CPU cores to use for multiprocessing
+    num_cores = 32  # You can adjust this based on your machine's capabilities
+    
+    with Manager() as manager:
+        seq_number = manager.Value('i', 1)  # Create a shared integer variable
+        
+        with Pool(processes=num_cores) as pool:
+            pool.starmap(process_string, [(string, seq_number) for string in strings])
+
+  
+              
