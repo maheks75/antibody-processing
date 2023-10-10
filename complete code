@@ -213,7 +213,7 @@ if __name__ == "__main__":
         
         with Pool(processes=num_cores) as pool:
             pool.starmap(process_string, [(string, seq_number) for string in strings])
-#
+# repeat the last step again for two strings
 
   
               
