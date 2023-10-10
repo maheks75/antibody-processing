@@ -1,0 +1,79 @@
+# Snakemake Snakefile
+configfile: "config.yaml"
+
+rule all:
+    input:
+        expand("output/{sample}_igblast_output.txt", sample=config["samples"]),
+        
+rule full:
+    input:
+        fastq="samples/{sample}.fastq"
+    output:
+        with_g="output/{sample}_MERGEDAL121122WithGGGGG.txt",
+        without_g="output/{sample}_MERGEDAL121122WithoutGGGGG.txt"
+    shell:
+        """
+        python script1.py {input.fastq} {output.with_g} {output.without_g}
+        """
+
+rule extract_12bpUMI_before5Gs:
+    input:
+        text_file="output/{sample}_MERGEDAL121122WithGGGGG.txt"
+    output:
+        Extracted="output/{sample}_MERGEDExtractedSequencesUMI12NT.txt"
+    shell:
+        """
+        python script2.py {input.text_file} {output.Extracted}
+        """
+# Rule to find consensus sequences
+rule separate_repeating_and_nonrepeating_UMIs:
+    input:
+        extracted_file="output/{sample}_MERGEDExtractedSequencesUMI12NT.txt"
+    output:
+        output_file1="output/{sample}_repeating_strings_OF_12NTUMI-2.txt",
+        output_file2="output/{sample}_non_repeating_strings_OF_12NTUMI-2.txt"
+    shell:
+        """
+        python script3.py {input.extracted_file} {output.output_file1} {output.output_file2}
+        """     
+rule seprate_strings_repeating_twice_and_morethan_twice:
+    input:
+        repating_file="output/{sample}_repeating_strings_OF_12NTUMI-2.txt"
+    output:
+        two_string="output/{sample}_twostrings.txt",
+        multi_string="output/{sample}_multiplestrings.txt"
+    shell:
+        """
+        python script4.py {input.repating_file} {output.two_string} {output.multi_string}
+        """ 
+rule generate__consensus_for_multrepeating_strings:
+    input:
+        fastq="samples/{sample}.fastq",
+        input1="output/{sample}_multiplestrings.txt",
+        input2="output/{sample}_twostrings.txt"    
+    output:
+        output1="output/{sample}_All_consensus.txt",
+        output2="output/{sample}_consensus_for_two_repeating_strings"
+    shell:
+        """
+        python script8.py {input.fastq} {input.input1} {input.input2} {output.output1} {output.output2}
+        """ 
+rule merging:
+    input:
+        input1_1="output/{sample}_consensus_for_two_repeating_strings",
+        input2_2=  "output/{sample}_All_consensus.txt"
+    output:
+        output1_1="output/{sample}_merged_consensus.txt"
+    shell:
+        """
+        python script6.py {input.input1_1} {input.input2_2} {output.output1_1} 
+        """    
+rule blast:
+    input:
+        input_igblast="output/{sample}_merged_consensus.txt"
+    output:
+        output_igblast="output/{sample}_igblast_output.txt"
+    shell:
+        """
+        python script7.py {input.input_igblast} {output.output_igblast} 
+        """                
