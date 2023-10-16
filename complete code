@@ -214,6 +214,87 @@ if __name__ == "__main__":
         with Pool(processes=num_cores) as pool:
             pool.starmap(process_string, [(string, seq_number) for string in strings])
 # repeat the last step again for two strings
+#script to pull out sequences for each umi consensus via multiprocessing
+from Bio import SeqIO
+from multiprocessing import Pool, Manager
+
+def seq_file(target):
+    Sequences = []
+    sequence_count = 0
+    print(target)
+    for record in SeqIO.parse(input_fastq_file, "fastq"):
+            sequence = str(record.seq)
+            sequence1 = str(record.seq)[:12]
+            if target in sequence1:
+                Sequences.append(sequence)
+                sequence_count += 1     
+    with open(f"{target}_{sequence_count}.txt", "w") as file:
+        for i, sequence in enumerate(Sequences):
+            file.write(f"{sequence}\n")
+
+
+num_cores = 14  # You can adjust this based on your machine's capabilities    
+input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
+target_sequence = ["CACCATGTCGAA"]
+with Pool(processes=num_cores) as pool:
+    pool.map(seq_file, target_sequence)
+# Read the lines from the text file
+with open("All_con_2.txt", "r") as file:
+    lines = file.readlines()
+
+# Split lines into header and sequence parts
+header_seq_pairs = []
+current_header = None
+current_sequence = ""
+
+for line in lines:
+    if line.startswith(">"):
+        if current_header is not None:
+            header_seq_pairs.append((current_header, current_sequence))
+        current_header = line.strip()
+        current_sequence = ""
+    else:
+        current_sequence += line.strip()
+
+# Add the last pair to the list
+if current_header is not None:
+    header_seq_pairs.append((current_header, current_sequence[:12]))
+
+# Sort the pairs based on the numbers after ":"
+sorted_pairs = sorted(header_seq_pairs, key=lambda pair: float(pair[0].split(":")[1]), reverse=True)
+
+# Write the sorted pairs to a new file
+with open("UMI_seqnum_output_file.txt", "w") as outfile:
+    for header, sequence in sorted_pairs:
+        outfile.write(header + "\n" + sequence + "\n")
+
+print("Sorting and writing complete.")
+import subprocess
+
+# Define the input and output file paths
+input_fasta = 'fake.fasta'
+output_file = 'igblastn_output_consensus_two_strings.txt'
+
+# Define the IgBLAST command
+igblast_cmd = [
+    'igblastn',
+    '-query', input_fasta,
+    '-out', output_file,
+    '-germline_db_V', 'AlpacaV',
+    '-germline_db_J', 'AlpacaJ',
+    '-germline_db_D', 'AlpacaD',
+    '-auxiliary_data','camelid_gl.aux',
+    '-num_threads', '14',
+    '-outfmt', '19',  
+    # Add more parameters as needed, e.g., '-domain_system', 'imgt'
+]
+
+# Run the IgBLAST command
+try:
+    subprocess.run(igblast_cmd, check=True)
+    print("IgBLAST analysis complete. Output saved to:", output_file)
+except subprocess.CalledProcessError as e:
+    print("Error running IgBLAST:", e)
 
   
               
