@@ -115,7 +115,7 @@ with open('FINAL_multiplestrings.txt', 'w') as file:
                     print(stringgg)
                     file.write(f"{stringgg} \n")        
 
-#final script to make consensus seqs using multi-processing and outputs a file with percentage of similar seqs with consensus
+#SCRIPT TO FIND consensus, PERCENTAGE similarity according to last occurence of 5 gs
 from Bio import SeqIO
 from multiprocessing import Pool, Manager
 
@@ -124,7 +124,7 @@ def process_string(string, seq_number):
     sequences = []
     
     # Open the output file within the process_string function
-    with open("All_con_2.txt", "a") as outfile:
+    with open("All_con_4Gs.txt", "a") as outfile:
         for record in SeqIO.parse(input_fastq_file, "fastq"):
             sequence = str(record.seq)
             if string in sequence[:12]:
@@ -134,12 +134,13 @@ def process_string(string, seq_number):
             percentage_low_mismatch = calculate_percentage_low_mismatch(sequences, consensus_sequence)
             
             sequence_header = f">Seq{seq_number.value}"  # Access the shared seq_number using .value
-            outfile.write(f">Seq{seq_number.value} : {len(sequences)} : {percentage_low_mismatch}\n{consensus_sequence}\n")
+            outfile.write(f">Seq{seq_number.value} : {len(sequences)} : {string} : {percentage_low_mismatch}\n{consensus_sequence}\n")
             seq_number.value += 1
 
 def calculate_consensus(sequences):
     length_counts = {}
-    consensus_sequence = ""
+    
+    seq_list2 = []
     #print(sequences)
     for seq in sequences:
         seq_length = len(seq)
@@ -152,24 +153,31 @@ def calculate_consensus(sequences):
     for seq in sequences:
         if len(seq) == most_common_length:
             consensus_sequence = ""
-            BASES_CALCULATE = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
-            bases = ["A", "C", "G", "T", "N"]
-            for i in range(len(seq)):
-                for base in bases:
-                    BASES_CALCULATE[base] = 0
-                for j in range(len(sequences)):
-                    if len(sequences[j]) > i:
-                        base = sequences[j][i]
-                        BASES_CALCULATE[base] += 1
-                most_common_base = max(BASES_CALCULATE, key=BASES_CALCULATE.get)
-                consensus_sequence += most_common_base 
-    #print(consensus_sequence)
+            last_index = seq[:25].rfind("GGGGG")
+            if last_index != -1:
+                start_index = last_index + 5
+                seq_list2.append(seq[start_index:most_common_length])
+    #print(len(sequences))
+    for sl in seq_list2:
+        consensus_sequence = ""
+        BASES_CALCULATE = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
+        bases = ["A", "C", "G", "T", "N"]
+        for k in range(len(sl)):
+            for base in bases:
+                BASES_CALCULATE[base] = 0
+            for j in range(len(seq_list2)):
+                if len(seq_list2[j]) > k:
+                    base = seq_list2[j][k]
+                    BASES_CALCULATE[base] += 1
+            most_common_base = max(BASES_CALCULATE, key=BASES_CALCULATE.get)
+            consensus_sequence += most_common_base 
+    #print(consensus_sequence)    
     return consensus_sequence
 
 def calculate_percentage_low_mismatch(sequences, consensus_sequence):
     length_counts = {}
     seq_list = []
-    mismatch_threshold = 2
+    mismatch_threshold = 5
     total_sequences = 0
     low_mismatch_count = 0  
     #print(sequences)
@@ -181,35 +189,42 @@ def calculate_percentage_low_mismatch(sequences, consensus_sequence):
             length_counts[seq_length] = 1
     most_common_length = max(length_counts, key=length_counts.get)
     #print(most_common_length)
+    print(len(consensus_sequence))
     for seq in sequences:
         seq_length = len(seq)
         if seq_length == most_common_length:
-            seq_list.append(seq)
-    #print(consensus_sequence)   
+            last_index = seq[:25].rfind("GGGGG")
+            if last_index != -1:
+                start_index = last_index + 5
+                seq_list.append(seq[start_index:most_common_length])
+    print(len(consensus_sequence))
+    print(len(seq_list))
     for se in seq_list:
-        mismatch_count = 0
-        for i in range(len(se)):
-            if se[i] != consensus_sequence[i]:
-                mismatch_count += 1
+        if len(se) == len(consensus_sequence):
+            mismatch_count = 0           
+            for k in range(len(se)):
+                if se[k] != consensus_sequence[k]:
+                    mismatch_count += 1
         #print(mismatch_count)
         if mismatch_count <= mismatch_threshold:
-            low_mismatch_count += 1
+            low_mismatch_count += 1       
     #print(low_mismatch_count)
+    #print(len(seq_list))
     percentage_low_mismatch = (low_mismatch_count / len(seq_list)) * 100 if len(seq_list) > 0 else 0
-    #print(percentage_low_mismatch)
+    print(percentage_low_mismatch)
     return percentage_low_mismatch
 
 if __name__ == "__main__":
     input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
     
-    with open("FINAL_multiplestrings.txt", 'r') as file:
+    with open("FINAL_121_4Gs_multiplestrings.txt", 'r') as file:
         strings = [line.strip() for line in file]
     
     # Number of CPU cores to use for multiprocessing
-    num_cores = 32  # You can adjust this based on your machine's capabilities
+    num_cores = 14  # You can adjust this based on your machine's capabilities
     
     with Manager() as manager:
-        seq_number = manager.Value('i', 1)  # Create a shared integer variable
+        seq_number = manager.Value('k', 1)  # Create a shared integer variable
         
         with Pool(processes=num_cores) as pool:
             pool.starmap(process_string, [(string, seq_number) for string in strings])
@@ -238,6 +253,8 @@ input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
 target_sequence = ["CACCATGTCGAA"]
 with Pool(processes=num_cores) as pool:
     pool.map(seq_file, target_sequence)
+
+#script to arrange the consensus file according to percentage similarity or number of seqs in a umi group
 # Read the lines from the text file
 with open("All_con_2.txt", "r") as file:
     lines = file.readlines()
