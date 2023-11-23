@@ -1,0 +1,87 @@
+#seprate cdrs from the igblast file
+length_cdr3 = {}
+asterisk_cdr3 = []
+
+with open("cdr3_al121.txt", 'r') as file:
+    lines = [line.strip() for line in file]
+
+for line in lines:
+    length = len(line)
+    
+    if '*' in line:
+        asterisk_cdr3.append(line)
+    else:
+        if length in length_cdr3:
+            length_cdr3[length].append(line)
+        else:
+            length_cdr3[length] = [line]
+count = 0
+for length, cdr3_list in length_cdr3.items():
+    count += 1
+    name = f"{length}_{len(cdr3_list)}_cdr3.txt"
+    with open(name, "w") as file:
+        file.write(f"{cdr3_list}\n")
+with open("asterisk_cdr3.txt", "w") as file:
+    file.write(f"{asterisk_cdr3}\n")
+
+#script to make clusters/families
+import os
+import ast
+
+def process_element(first_element, element, matrix_dict):
+    current_dict = {(char1, char2): matrix_dict.get((char1, char2), 0) for char1, char2 in zip(first_element, element)}
+    dict_values = current_dict.values()
+    # Exclude None values before summing
+    valid_values = [value for value in dict_values if value is not None]
+    dict_sum = sum(valid_values)
+    return dict_sum > 17
+
+def process_file(input_filename, matrix_dict):
+    with open(input_filename, 'r') as file:
+        file_content = file.read()
+        input_slist = ast.literal_eval(file_content)
+
+    remain_list = input_slist.copy()
+    output_dir = os.path.join("output_directory", os.path.splitext(os.path.basename(input_filename))[0])
+    os.makedirs(output_dir, exist_ok=True)
+
+    while remain_list:
+        first_element = remain_list[0]
+        print(first_element)
+
+        family = [first_element]
+
+        for current_element in remain_list[1:]:
+            if process_element(first_element, current_element, matrix_dict):
+                family.extend([current_element])
+
+        output_filename = os.path.join(output_dir, f"{first_element}.txt")
+        with open(output_filename, "w") as file:
+            for fa in family:
+                file.write(f"{fa}\n")
+        
+        remain_list = [ele for ele in remain_list if ele not in family]
+
+if __name__ == "__main__":
+    import biotite.sequence as seq
+    import biotite.sequence.align as align
+    import numpy as np
+    import ast
+    alph = seq.ProteinSequence.alphabet
+    # Load the standard protein substitution matrix, which is BLOSUM62
+    matrix = align.SubstitutionMatrix.std_protein_matrix()
+#print("\nBLOSUM62\n")
+#print(matrix)
+
+    matrix_dict = align.SubstitutionMatrix.dict_from_db("BLOSUM62")
+    matrix = align.SubstitutionMatrix(alph, alph, matrix_dict)
+
+    scores = np.identity(len(alph), dtype=int)
+    matrix = align.SubstitutionMatrix(alph, alph, scores)  
+    input_directory = "cdr"  
+    for filename in os.listdir(input_directory):
+        if filename.endswith(".txt"):
+            input_filepath = os.path.join(input_directory, filename)
+            process_file(input_filepath, matrix_dict)
+
+    
