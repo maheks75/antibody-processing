@@ -1,0 +1,51 @@
+#final scripts for trimmed files
+from Bio.SeqUtils.ProtParam import ProteinAnalysis
+from Bio import SeqIO
+import pandas as pd
+
+def analyse_seq():
+    data_1 = pd.read_csv('extra sequences for Pi 13Feb24.tsv', sep='\t')
+    seq_list = []
+    seq_list_1 = []
+      # Initialize result_list
+
+    with open('heavy_strings_2.txt', 'w') as file:
+        for i, row in data_1.iterrows():
+            if pd.notna(row[2]):
+                seq_list.append(row[1])
+                file.write(row[0]+'_'+row[1] + '\n')  
+
+    with open('light_strings_2.txt', 'w') as file:
+        for i, row in data_1.iterrows():
+            if pd.notna(row[1]):
+                seq_list_1.append(row[2])
+                file.write(row[2] + '\n')  
+
+    for i, record in enumerate(SeqIO.parse('constant_option2.txt', "fasta")):
+        sequence_data = str(record.seq)
+        header = record.description
+        for j, record_light in enumerate(SeqIO.parse('light_constant.txt', "fasta")):
+            sequence_data_light = str(record_light.seq)
+            with open(f'{header}_output.txt', 'w') as output_file:
+                result_list = []
+                with open('heavy_strings_2.txt', 'r') as heavy_input_file, open('light_strings_2.txt', 'r') as light_input_file:
+                    strings_heavy = [line.strip() for line in heavy_input_file]
+                    strings_light = [line.strip() for line in light_input_file]                    
+                    for string_final_heavy, string_final_light in zip(strings_heavy, strings_light):    
+                        if string_final_heavy.startswith('>'):
+                            seq_h_heavy = string_final_heavy.split('_')
+                            seq_hh_heavy = seq_h_heavy[1]
+                            ses_index_heavy = seq_h_heavy[0]
+                            seq_h_light = string_final_light
+                            total_string = (seq_hh_heavy + sequence_data + seq_h_light + sequence_data_light + '\n')
+                            print(total_string)
+                            protein_analysis = ProteinAnalysis(total_string)
+                            isolectric_point = protein_analysis.isoelectric_point()
+                            mw = protein_analysis.molecular_weight()
+                            extinction_coeff = protein_analysis.molar_extinction_coefficient()
+                            abs_ec = round(extinction_coeff[1] / mw, 3)
+                            result_list.append([ses_index_heavy, seq_hh_heavy,seq_h_light,isolectric_point,abs_ec, total_string]) 
+                result_df = pd.DataFrame(result_list, columns=['Index','Heavy Chain', 'Light Chain', 'Pi', 'Abs EC', 'Total_string'])                         
+                result_df.to_csv(header+'result_file.tsv', sep='\t', index=False) 
+
+analyse_seq()
