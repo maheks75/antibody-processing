@@ -195,7 +195,7 @@ for string in file2_strings:
     if isinstance(string, str) and string not in common_strings:
         print(string)
         unique_string.append(string)
-    with open('4g_final.txt', 'w') as file:
+    with open('uniquestrings_4g.txt', 'w') as file:
         for strg in unique_string:
             file.write(strg+'\n')
 
