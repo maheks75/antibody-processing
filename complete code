@@ -1,317 +1,359 @@
-# STEP TO SEPARATE SEQUENCES WITH 5Gs from the fastq file
+#STEP1
 from Bio import SeqIO
-
-input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
-output_file_with_g = "MERGEDAL121122WithGGGGG_2.fastq"
-output_file_without_g = "MERGEDAL121122WithoutGGGGG_2.fastq"
-
-with open(output_file_with_g, 'w') as output_handle_with_g, open(output_file_without_g, 'w') as output_handle_without_g:
+input_fastq_file = "A.fastq"
+output_file_5g_with_g = "MERGEDAL_t_With5G_2.fastq"
+output_file_5g_without_g = "MERGEDAL_t_Without5G_2.fastq"
+output_file_4g_with_g = "MERGEDAL_t_With4G_2.fastq"
+output_file_4g_without_g = "MERGEDAL_t_Without4G_2.fastq"
+with open(output_file_5g_with_g, 'w') as output_handle_with_5g, open(output_file_5g_without_g, 'w') as output_handle_without_5g:
     for i, record in enumerate(SeqIO.parse(input_fastq_file, "fastq")):
-        sequence_data = str(record.seq)[:19]
+        sequence_data = str(record.seq)[:25]
+        print(sequence_data)
 
-        if "GGGGG" in sequence_data:
-            output_handle_with_g.write(f"{sequence_data}\n")
-        else:
-            output_handle_without_g.write(f"{sequence_data}\n")
+        if 'GGGGG' in sequence_data:
+            output_handle_with_5g.write(f"{sequence_data}\n")
+        
+with open(output_file_4g_with_g, 'w') as output_handle_with_4g, open(output_file_4g_without_g, 'w') as output_handle_without_4g:
+    for i, record in enumerate(SeqIO.parse(input_fastq_file, "fastq")):
+        sequence_data = str(record.seq)[:25]
+        print(sequence_data)
 
-#final script to extract umi from a file with ggggg 06/10
+        if 'GGGG' in sequence_data:
+            output_handle_with_4g.write(f"{sequence_data}\n")
+        
+#STEP2
+#final script to extract umi from a file with ggggg
 from Bio import SeqIO
 
-input_txt_file = "MERGEDAL121122WithGGGGG.fastq"
-target_sequence = 'GGGGG'
-output_file = "MERGEDExtractedSequencesUMI12NT.txt"
+input_5g_txt_file = "MERGEDAL_t_With5G_2.fastq"
+input_4g_txt_file = "MERGEDAL_t_With4G_2.fastq"
+target_sequence_4g = 'GGGG'
+target_sequence_5g = 'GGGGG'
+output_file_4G = "MERGEDAL_t_With4G_Extracted.txt"
+output_file_5G = "MERGEDAL_t_With5G_Extracted.txt"
 sequences_written = 0
 
-with open(input_txt_file, "r") as file, open(output_file, 'w') as output_handle:
+with open(input_5g_txt_file, "r") as file, open(output_file_5G, 'w') as output_handle:
     strings = [line.strip() for line in file]
     for string in strings:
-        if target_sequence in string[:18]:
+        if target_sequence_5g in string[:18]:
             extracted_sequence = string[:12]
             output_handle.write(extracted_sequence + "\n")
             sequences_written += 1
-            print("Extracted Sequence:", extracted_sequence)
-        else:
-            print("Pattern 'GGGGG' not found or is too close to the start of the sequence.")
-
-print(f"Number of sequences written to {output_file}: {sequences_written}")
-
-#SCRIPT TO SEPARATE REPEATINGA ND NON REPEATING STRINGS FROM THE EXTRACTED UMI FILE
-filename = "MERGEDExtractedSequencesUMI12NT.txt"
-
-# Read the strings from the file
-with open(filename, 'r') as file:
-    strings = [line.strip() for line in file]
-
-string_count = {}
-for string in strings:
-    if string in string_count:
-        string_count[string] += 1
-    else:
-        string_count[string] = 1
-
-repeating_strings_count = 0
-non_repeating_strings_count = 0
-
-repeating_filename = "FINAL_repeating_strings_OF_12NTUMI.txt"
-non_repeating_filename = "FINAL_non_repeating_strings_OF_12NTUMI.txt"
-
-repeating_strings = []
-non_repeating_strings = []
-
-# Separate repeating and non-repeating strings
-for string, count in string_count.items():
-    if count > 1:
-        repeating_strings.append((string, count))
-        repeating_strings_count += count
-    else:
-        non_repeating_strings.append((string, count))
-        non_repeating_strings_count += count
-
-repeating_strings.sort(key=lambda x: x[1], reverse=True)
-non_repeating_strings.sort(key=lambda x: x[1], reverse=True)
-
-# Write repeating strings to file with count
-with open(repeating_filename, 'w') as file:
-    for string, count in repeating_strings:
-        file.write(f"{string}: {count}\n")
-
-# Write non-repeating strings to file with count
-with open(non_repeating_filename, 'w') as file:
-    for string, count in non_repeating_strings:
-        file.write(f"{string}: {count}\n")
-
-# Calculate the total number of strings
-total_strings_count = len(strings)
-
-print("Total number of strings:", total_strings_count)
-print("Sum of counts for repeating strings:", repeating_strings_count)
-print("Sum of counts for non-repeating strings:", non_repeating_strings_count)
-
-#final script to separate multiple repeating and strings that are repeating only twice from the total set of repeating strings
-filename = "FINAL_repeating_strings_OF_12NTUMI.txt"
-
-# Read the strings from the file
-with open(filename, 'r') as file:
-    count = 0
-    twostringlist = []
-    multiplestring = []
+            #print("Extracted Sequence:", extracted_sequence)
+        
+with open(input_4g_txt_file, "r") as file, open(output_file_4G, 'w') as output_handle:
     strings = [line.strip() for line in file]
     for string in strings:
-        parts = string.split(':')
-        if int(parts[1]) == 2:
-            twostringlist.append(parts[0])
-            
-        else:
-            multiplestring.append(parts[0])
-            
+        if target_sequence_4g in string[:18]:
+            extracted_sequence = string[:12]
+            output_handle.write(extracted_sequence + "\n")
+            sequences_written += 1
+            #print("Extracted Sequence:", extracted_sequence)         
 
-with open('FINAL_twostrings.txt', 'w') as file:
-                for i, stringg in enumerate(twostringlist):
-                    print(stringg)
-                    file.write(f"{stringg} \n")
-        
-with open('FINAL_multiplestrings.txt', 'w') as file:
-                for i, stringgg in enumerate(multiplestring):
-                    print(stringgg)
-                    file.write(f"{stringgg} \n")        
+#print(f"Number of sequences written to {output_file}: {sequences_written}")
+#STEP3
+filename_5G = "MERGEDAL_t_With5G_Extracted.txt"
+filename_4G = "MERGEDAL_t_With4G_Extracted.txt"
 
-#SCRIPT TO FIND consensus, PERCENTAGE similarity according to last occurence of 5 gs
-from Bio import SeqIO
-from multiprocessing import Pool, Manager
+# Read the strings from the file
+with open(filename_5G, 'r') as file_5G:
+    strings_5G = [line.strip() for line in file_5G]
 
-# Function to process a single string
-def process_string(string, seq_number):
-    sequences = []
-    
-    # Open the output file within the process_string function
-    with open("All_con_4Gs.txt", "a") as outfile:
-        for record in SeqIO.parse(input_fastq_file, "fastq"):
-            sequence = str(record.seq)
-            if string in sequence[:12]:
-                sequences.append(sequence)        
-        if sequences:
-            consensus_sequence = calculate_consensus(sequences)
-            percentage_low_mismatch = calculate_percentage_low_mismatch(sequences, consensus_sequence)
-            
-            sequence_header = f">Seq{seq_number.value}"  # Access the shared seq_number using .value
-            outfile.write(f">Seq{seq_number.value} : {len(sequences)} : {string} : {percentage_low_mismatch}\n{consensus_sequence}\n")
-            seq_number.value += 1
-
-def calculate_consensus(sequences):
-    length_counts = {}
-    
-    seq_list2 = []
-    #print(sequences)
-    for seq in sequences:
-        seq_length = len(seq)
-        if seq_length in length_counts:
-            length_counts[seq_length] += 1
-        else:
-            length_counts[seq_length] = 1
-    most_common_length = max(length_counts, key=length_counts.get)
-    #print(most_common_length)
-    for seq in sequences:
-        if len(seq) == most_common_length:
-            consensus_sequence = ""
-            last_index = seq[:25].rfind("GGGGG")
-            if last_index != -1:
-                start_index = last_index + 5
-                seq_list2.append(seq[start_index:most_common_length])
-    #print(len(sequences))
-    for sl in seq_list2:
-        consensus_sequence = ""
-        BASES_CALCULATE = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
-        bases = ["A", "C", "G", "T", "N"]
-        for k in range(len(sl)):
-            for base in bases:
-                BASES_CALCULATE[base] = 0
-            for j in range(len(seq_list2)):
-                if len(seq_list2[j]) > k:
-                    base = seq_list2[j][k]
-                    BASES_CALCULATE[base] += 1
-            most_common_base = max(BASES_CALCULATE, key=BASES_CALCULATE.get)
-            consensus_sequence += most_common_base 
-    #print(consensus_sequence)    
-    return consensus_sequence
-
-def calculate_percentage_low_mismatch(sequences, consensus_sequence):
-    length_counts = {}
-    seq_list = []
-    mismatch_threshold = 5
-    total_sequences = 0
-    low_mismatch_count = 0  
-    #print(sequences)
-    for seq in sequences:
-        seq_length = len(seq)
-        if seq_length in length_counts:
-            length_counts[seq_length] += 1
-        else:
-            length_counts[seq_length] = 1
-    most_common_length = max(length_counts, key=length_counts.get)
-    #print(most_common_length)
-    print(len(consensus_sequence))
-    for seq in sequences:
-        seq_length = len(seq)
-        if seq_length == most_common_length:
-            last_index = seq[:25].rfind("GGGGG")
-            if last_index != -1:
-                start_index = last_index + 5
-                seq_list.append(seq[start_index:most_common_length])
-    print(len(consensus_sequence))
-    print(len(seq_list))
-    for se in seq_list:
-        if len(se) == len(consensus_sequence):
-            mismatch_count = 0           
-            for k in range(len(se)):
-                if se[k] != consensus_sequence[k]:
-                    mismatch_count += 1
-        #print(mismatch_count)
-        if mismatch_count <= mismatch_threshold:
-            low_mismatch_count += 1       
-    #print(low_mismatch_count)
-    #print(len(seq_list))
-    percentage_low_mismatch = (low_mismatch_count / len(seq_list)) * 100 if len(seq_list) > 0 else 0
-    print(percentage_low_mismatch)
-    return percentage_low_mismatch
-
-if __name__ == "__main__":
-    input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
-    
-    with open("FINAL_121_4Gs_multiplestrings.txt", 'r') as file:
-        strings = [line.strip() for line in file]
-    
-    # Number of CPU cores to use for multiprocessing
-    num_cores = 14  # You can adjust this based on your machine's capabilities
-    
-    with Manager() as manager:
-        seq_number = manager.Value('k', 1)  # Create a shared integer variable
-        
-        with Pool(processes=num_cores) as pool:
-            pool.starmap(process_string, [(string, seq_number) for string in strings])
-# repeat the last step again for two strings
-#script to pull out sequences for each umi consensus via multiprocessing
-from Bio import SeqIO
-from multiprocessing import Pool, Manager
-
-def seq_file(target):
-    Sequences = []
-    sequence_count = 0
-    print(target)
-    for record in SeqIO.parse(input_fastq_file, "fastq"):
-            sequence = str(record.seq)
-            sequence1 = str(record.seq)[:12]
-            if target in sequence1:
-                Sequences.append(sequence)
-                sequence_count += 1     
-    with open(f"{target}_{sequence_count}.txt", "w") as file:
-        for i, sequence in enumerate(Sequences):
-            file.write(f"{sequence}\n")
-
-
-num_cores = 14  # You can adjust this based on your machine's capabilities    
-input_fastq_file = "MERGEDAL121122.fastq.assembled.fastq"
-target_sequence = ["CACCATGTCGAA"]
-with Pool(processes=num_cores) as pool:
-    pool.map(seq_file, target_sequence)
-
-#script to arrange the consensus file according to percentage similarity or number of seqs in a umi group
-# Read the lines from the text file
-with open("All_con_2.txt", "r") as file:
-    lines = file.readlines()
-
-# Split lines into header and sequence parts
-header_seq_pairs = []
-current_header = None
-current_sequence = ""
-
-for line in lines:
-    if line.startswith(">"):
-        if current_header is not None:
-            header_seq_pairs.append((current_header, current_sequence))
-        current_header = line.strip()
-        current_sequence = ""
+string_count_5G = {}
+for string_5G in strings_5G:
+    if string_5G in string_count_5G:
+        string_count_5G[string_5G] += 1
     else:
-        current_sequence += line.strip()
+        string_count_5G[string_5G] = 1
 
-# Add the last pair to the list
-if current_header is not None:
-    header_seq_pairs.append((current_header, current_sequence[:12]))
+repeating_strings_count_5G = 0
+non_repeating_strings_count_5G = 0
 
-# Sort the pairs based on the numbers after ":"
-sorted_pairs = sorted(header_seq_pairs, key=lambda pair: float(pair[0].split(":")[1]), reverse=True)
+repeating_filename_5G = "repeating_5g.txt"
+non_repeating_filename_5G = "nonrepeating_5g.txt"
 
-# Write the sorted pairs to a new file
-with open("UMI_seqnum_output_file.txt", "w") as outfile:
-    for header, sequence in sorted_pairs:
-        outfile.write(header + "\n" + sequence + "\n")
+repeating_strings_5G = []
+non_repeating_strings_5G = []
 
-print("Sorting and writing complete.")
+# Separate repeating and non-repeating strings
+for string_5G, count_5G in string_count_5G.items():
+    if count_5G > 1:
+        repeating_strings_5G.append((string_5G, count_5G))
+        repeating_strings_count_5G += count_5G
+repeating_strings_5G.sort(key=lambda x: x[1], reverse=True)
+
+
+# Write repeating strings to file with count
+with open(repeating_filename_5G, 'w') as file_5G:
+    for string_5G, count_5G in repeating_strings_5G:
+        file_5G.write(f"{string_5G}: {count_5G}\n")
+with open(filename_4G, 'r') as file:
+    strings_4G = [line.strip() for line in file]
+
+string_count_4G = {}
+for string_4G in strings_4G:
+    if string_4G in string_count_4G:
+        string_count_4G[string_4G] += 1
+    else:
+        string_count_4G[string_4G] = 1
+
+repeating_strings_count_4G = 0
+non_repeating_strings_count_4G = 0
+
+repeating_filename_4G = "repeating_4g.txt"
+non_repeating_filename_4G = "nonrepeating_4g.txt"
+
+repeating_strings_4G = []
+non_repeating_strings_4G = []
+
+# Separate repeating and non-repeating strings
+for string_4G, count_4G in string_count_4G.items():
+    if count_4G > 1:
+        repeating_strings_4G.append((string_4G, count_4G))
+        repeating_strings_count_4G += count_4G
+repeating_strings_4G.sort(key=lambda x: x[1], reverse=True)
+
+
+# Write repeating strings to file with count
+with open(repeating_filename_4G, 'w') as file:
+    for string_4G, count_4G in repeating_strings_4G:
+        file.write(f"{string_4G}: {count_4G}\n")        
+#STEP4
+#final script to separate multiple repeating and strings that are repeating only twice from the total set of repeating strings
+filename_5G = "repeating_5g.txt"
+filename_4G = "repeating_4g.txt"
+
+# Read the strings from the file
+with open(filename_5G, 'r') as file_5G:
+    count_5G = 0
+    twostringlist_5G = []
+    multiplestring_5G = []
+    strings_5G = [line.strip() for line in file_5G]
+    for string_5G in strings_5G:
+        parts_5G = string_5G.split(':')
+        if int(parts_5G[1]) < 50:
+            twostringlist_5G.append(parts_5G[0])            
+        else:
+            multiplestring_5G.append(parts_5G[0])
+            
+        
+with open('multiple_strings_5g.txt', 'w') as file_5G:
+                for i, stringgg_5G in enumerate(multiplestring_5G):
+                    print(stringgg_5G)
+                    file_5G.write(f"{stringgg_5G} \n")         
+with open(filename_4G, 'r') as file_4G:
+    count_4G = 0
+    twostringlist_4G = []
+    multiplestring_4G = []
+    strings_4G = [line.strip() for line in file_4G]
+    for string_4G in strings_4G:
+        parts_4G = string_4G.split(':')
+        if int(parts_4G[1]) < 40:
+            twostringlist_4G.append(parts_4G[0])            
+        else:
+            multiplestring_4G.append(parts_4G[0])
+            
+        
+with open('multiple_strings_4g.txt', 'w') as file_4G:
+                for i, stringgg_4G in enumerate(multiplestring_4G):
+                    print(stringgg_4G)
+                    file_4G.write(f"{stringgg_4G} \n")         
+                        
+
+#STEP5
+
+def read_text_file(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        # Remove leading and trailing whitespace, and split into a list of strings
+        string_list = [line.strip() for line in lines if isinstance(line, str)]
+    return string_list
+
+# File paths for the two text files
+file1_path = 'A_multiplestrings_5g.txt'
+file2_path = 'A_multiplestrings_4g.txt'
+# Read and process the text files
+file1_strings = read_text_file(file1_path)
+file2_strings = read_text_file(file2_path)
+
+# Find the common strings
+common_strings = set(file1_strings).intersection(file2_strings)
+unique_string = []
+# Print the common strings
+#print("Common Strings:", common_strings)
+
+# Print the strings that are not common in file1
+print("Strings in file1 but not in file2:")
+for string in file1_strings:
+    if isinstance(string, str) and string not in common_strings:
+        print(string)
+
+# Print the strings that are not common in file2
+print("Strings in file2 but not in file1:")
+for string in file2_strings:
+    if isinstance(string, str) and string not in common_strings:
+        print(string)
+        unique_string.append(string)
+    with open('4g_final.txt', 'w') as file:
+        for strg in unique_string:
+            file.write(strg+'\n')
+
+#STEP6- SEE CONSENSUS CALLING FOR UMI(TYPE1 AND 2)
+
+#STEP 7
+from Bio import SeqIO
+
+input_fastq_file_5g = "5g_IL8_T_con.txt"
+input_fastq_file_4g = "4g_IL8_T_con.txt"
+output_file_full = "merged.txt"
+sequence_list_file = "sequence_list.txt"
+
+sequence_full_list = []
+sequence_list_only = []
+
+with open(output_file_full, 'w') as file:
+    for i, record in enumerate(SeqIO.parse(input_fastq_file_5g, "fasta")):
+        header_parts = record.description.split(":")
+        header = f">{i+1} {header_parts[2].strip()}"
+        sequence_data_5g = str(record.seq)
+        print(sequence_data_5g)
+        sequence_full_list.append(f"{header}\n{sequence_data_5g}")
+        sequence_list_only.append(header_parts[2].strip())
+
+    for i, record in enumerate(SeqIO.parse(input_fastq_file_4g, "fasta")):
+        header_parts = record.description.split(":")
+        header = f">{i+1} {header_parts[2].strip()}"
+        sequence_data_4g = str(record.seq)
+        print(sequence_data_4g)
+        sequence_full_list.append(f"{header}\n{sequence_data_4g}")
+        sequence_list_only.append(header_parts[2].strip())
+
+    for seq_full in sequence_full_list:
+        file.write(seq_full + '\n')
+
+# Save the sequence_list_only to a file
+with open(sequence_list_file, 'w') as seq_file:
+    for seq_part in sequence_list_only:
+        seq_file.write(seq_part + '\n')
+
+print("List of sequence headers only:", sequence_list_only)
+#STEP8
+import sys
+from Bio import SeqIO
 import subprocess
-
-# Define the input and output file paths
-input_fasta = 'fake.fasta'
-output_file = 'igblastn_output_consensus_two_strings.txt'
-
-# Define the IgBLAST command
+input_fasta = 'merged.txt'
+output_fasta = 'igblast_output.tsv'
 igblast_cmd = [
-    'igblastn',
-    '-query', input_fasta,
-    '-out', output_file,
-    '-germline_db_V', 'AlpacaV',
-    '-germline_db_J', 'AlpacaJ',
-    '-germline_db_D', 'AlpacaD',
-    '-auxiliary_data','camelid_gl.aux',
-    '-num_threads', '14',
-    '-outfmt', '19',  
-    # Add more parameters as needed, e.g., '-domain_system', 'imgt'
+     'igblastn',
+     '-query', input_fasta,
+     '-out', output_fasta,
+     '-germline_db_V', 'AlpacaV',
+     '-germline_db_J', 'AlpacaJ',
+     '-germline_db_D', 'AlpacaD',
+     '-auxiliary_data','camelid_gl.aux',
+     '-num_threads', '32',
+     '-outfmt', '19',  
 ]
-
-# Run the IgBLAST command
 try:
     subprocess.run(igblast_cmd, check=True)
-    print("IgBLAST analysis complete. Output saved to:", output_file)
-except subprocess.CalledProcessError as e:
+    print("IgBLAST analysis complete. Output saved to:", output_fasta)
+except subprocess.CalledProcessError as e:  
     print("Error running IgBLAST:", e)
 
-  
-              
+#STEP9
+import pandas as pd
+import sys
+# Load the TSV file into a DataFrame
+tsv_file_path = 'igblast_output.tsv'
+df = pd.read_csv(tsv_file_path, sep='\t')
+
+# Load the text file with strings
+strings_file_path = "sequence_list.txt"
+with open(strings_file_path, 'r') as strings_file:
+    umi_strings = [line.strip() for line in strings_file]
+
+# Create a new "umi" column and add strings
+df.insert(1, 'umi', umi_strings[:len(df)])
+
+# Keep columns 0 to 54
+df = df.iloc[:, :55]
+
+# EXAMINE DOUBLE HASTAGGED STEPS BELOW IF THE ARE NEEDED OR NOT
+##final_output_path = 'output.tsv'
+##df.to_csv(final_output_path, sep='\t', index=False)
+
+##tsv_file_path = 'output.tsv'
+# Load the CSV file into a DataFrame
+##df = pd.read_csv(tsv_file_path, sep='\t')
+
+# Select the columns of interest
+# Specify the column numbers you want to select
+selected_columns = [0,1,2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]
+
+selected_df = df.iloc[:, selected_columns]
+#print(selected_df)
+# Group by the "sequence_aa" column and aggregate other columns
+aggregation_dict = selected_df.groupby('sequence_aa').agg({
+                   selected_df.columns[0]: 'sum',
+                   selected_df.columns[1]: 'unique',
+                   selected_df.columns[4]: 'first',
+                   selected_df.columns[5]: 'first',
+                   selected_df.columns[6]: 'first',
+                   selected_df.columns[7]: 'first',
+                   selected_df.columns[8]: 'first',
+                   selected_df.columns[9]: 'first',
+                   selected_df.columns[10]: 'first',
+                   selected_df.columns[11]: 'first',
+                   selected_df.columns[12]: 'first',
+                   selected_df.columns[13]: 'first',
+                   selected_df.columns[14]: 'first',
+                   selected_df.columns[15]: 'first',
+                   selected_df.columns[16]: 'first',
+                   selected_df.columns[17]: 'first',
+                   selected_df.columns[18]: 'first',
+                   selected_df.columns[19]: 'first',
+                   selected_df.columns[20]: 'first',
+                   selected_df.columns[21]: 'first',
+                   selected_df.columns[22]: 'first',
+                   selected_df.columns[23]: 'first',
+                   selected_df.columns[24]: 'first',
+                   selected_df.columns[25]: 'first',
+                   selected_df.columns[26]: 'first',
+                   selected_df.columns[27]: 'first',
+                   selected_df.columns[28]: 'first',
+                   selected_df.columns[29]: 'first',
+                   selected_df.columns[30]: 'first',
+                   selected_df.columns[31]: 'first',
+                   selected_df.columns[32]: 'first',
+                   selected_df.columns[33]: 'first',
+                   selected_df.columns[34]: 'first',
+                   selected_df.columns[35]: 'first',
+                   selected_df.columns[36]: 'first',
+                   selected_df.columns[37]: 'first',
+                   selected_df.columns[38]: 'first',
+                   selected_df.columns[39]: 'first',
+                   selected_df.columns[40]: 'first',
+                   selected_df.columns[41]: 'first',
+                   selected_df.columns[42]: 'first',
+                   selected_df.columns[43]: 'first',
+                   selected_df.columns[44]: 'first',
+                   selected_df.columns[45]: 'first',
+                   selected_df.columns[46]: 'first',
+                   selected_df.columns[47]: 'first',
+                   selected_df.columns[48]: 'first',
+                   selected_df.columns[49]: 'first',
+                   selected_df.columns[50]: 'first',
+                   selected_df.columns[51]: 'first',
+                   selected_df.columns[52]: 'first',
+                   selected_df.columns[53]: 'first',
+                   selected_df.columns[54]: 'first'}
+).reset_index()
+
+aggregation_dict.to_csv('igblast_output_file.tsv', sep='\t', index=False)
+# Create a DataFrame with your UMI data
+df = pd.read_csv('igblast_output_file.tsv', sep='\t')
+#print(df.columns)
+# Split the UMI strings by space and count the number of strings
+df['Number_of_Strings'] = df['umi'].apply(lambda x: len(x.split()))
+df.to_csv('Final_processed_igblast_file.tsv', sep='\t', index = False)
