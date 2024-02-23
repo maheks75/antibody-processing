@@ -1,0 +1,45 @@
+#step 2
+import re
+from Bio import SeqIO
+
+input_txt_file = "MERGED_32_FASTQ.assembled.fastq"
+target_sequence = re.compile(r"[^C]{4}TGT[^C]{5}TGT[^C]{5}")
+output_file = "merged_with_pattern.txt"
+sequences_written = 0
+
+def is_valid_pattern(string):
+    return bool(target_sequence.search(string))
+
+with open(output_file, 'w') as file:
+    for i, record in enumerate(SeqIO.parse(input_txt_file, "fastq")):
+        sequence_data = str(record.seq)[-25:]
+        if is_valid_pattern(sequence_data):
+            file.write(sequence_data + "\n")
+            sequences_written += 1
+
+print(f"Number of sequences written to {output_file}: {sequences_written}")
+#step 3
+import re
+from Bio import SeqIO
+
+input_txt_file = "merged_with_pattern.txt"
+target_sequence = re.compile(r"TGT[^C]{5}TGT[^C]{5}")
+output_file = "MERGEDAL_32_Extracted.txt"
+sequences_written = 0
+
+def is_valid_pattern(string):
+    return bool(target_sequence.search(string))
+
+with open(input_txt_file, "r") as file, open(output_file, 'w') as output_handle:
+    strings = [line.strip() for line in file]
+    for string in strings:
+        if is_valid_pattern(string[-22:]):
+            extracted_sequence = string[-20:]
+            output_handle.write(extracted_sequence + "\n")
+            sequences_written += 1
+            print("Extracted Sequence:", extracted_sequence)
+        else:
+            print("Pattern 'GGGGG' not found or is too close to the start of the sequence.")
+
+print(f"Number of sequences written to {output_file}: {sequences_written}")
+#rest steps remain the same 
