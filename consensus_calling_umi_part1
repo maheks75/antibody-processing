@@ -1,4 +1,4 @@
-#SCRIPT TO FIND PERCENTAGE according to last occurence of 5 gs
+#IN WORKSTATION NAMED AS 'CPU4.PY'
 from Bio import SeqIO
 from multiprocessing import Pool, Manager
 import sys
@@ -7,7 +7,7 @@ def process_string(string, seq_number):
     sequences = []
     
     # Open the output file within the process_string function
-    with open(sys.argv[3], "a") as outfile:
+    with open('consensus_5g.txt', "a") as outfile:
         for record in SeqIO.parse(input_fastq_file, "fastq"):
             sequence = str(record.seq)
             if string in sequence[:12]:
@@ -100,28 +100,15 @@ def calculate_percentage_low_mismatch(sequences, consensus_sequence):
     return percentage_low_mismatch
 
 if __name__ == "__main__":
-    input_fastq_file = sys.argv[1]
+    input_fastq_file = 'MERGED_AL24.FASTQ'
     
-    with open(sys.argv[2], 'r') as file:
+    with open(multiplestrings_5g.txt, 'r') as file:
         strings = [line.strip() for line in file]
     
     # Number of CPU cores to use for multiprocessing
     num_cores = 48  # You can adjust this based on your machine's capabilities
-    
-    # Check if the list of strings is empty
-    if not strings:
-        print("No strings found in the input file. Creating an empty output file.")
-        with open(sys.argv[3], 'w') as outfile:
-            pass
-    else:
-        with Manager() as manager:
-            seq_number = manager.Value('k', 1)  # Create a shared integer variable
+    with Manager() as manager:
+        seq_number = manager.Value('k', 1)  # Create a shared integer variable
             
-            with Pool(processes=num_cores) as pool:
-                pool.starmap(process_string, [(string, seq_number) for string in strings])
-    
-    # Additional check at the end to create an empty output file if needed
-    if not os.path.isfile(sys.argv[3]):
-        print("Output file not created. Creating an empty output file.")
-        with open(sys.argv[3], 'w') as outfile:
-            pass
+        with Pool(processes=num_cores) as pool:
+            pool.starmap(process_string, [(string, seq_number) for string in strings])
