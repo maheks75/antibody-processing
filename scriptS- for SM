@@ -452,7 +452,7 @@ sequence_list_only = []
 with open(output_file_full, 'w') as file:
     for i, record in enumerate(SeqIO.parse(input_fastq_file_5g, "fasta")):
         header_parts = record.description.split(":")
-        header = f">{i+1} {header_parts[1].strip()}"
+        header = f"> {header_parts[1].strip()}"
         sequence_data_5g = str(record.seq)
         print(sequence_data_5g)
         sequence_full_list.append(f"{header}\n{sequence_data_5g}")
@@ -460,7 +460,7 @@ with open(output_file_full, 'w') as file:
 
     for i, record in enumerate(SeqIO.parse(input_fastq_file_4g, "fasta")):
         header_parts = record.description.split(":")
-        header = f">{i+1} {header_parts[1].strip()}"
+        header = f"> {header_parts[1].strip()}"
         sequence_data_4g = str(record.seq)
         print(sequence_data_4g)
         sequence_full_list.append(f"{header}\n{sequence_data_4g}")
