@@ -483,12 +483,12 @@ igblast_cmd = [
      'igblastn',
      '-query', input_fasta,
      '-out', output_fasta,
-     '-germline_db_V', 'AlpacaV',
-     '-germline_db_J', 'AlpacaJ',
-     '-germline_db_D', 'AlpacaD',
-     '-auxiliary_data','camelid_gl.aux',
+     '-germline_db_V', 'IGBLAST/AlpacaV',
+     '-germline_db_J', 'IGBLAST/AlpacaJ',
+     '-germline_db_D', 'IGBLAST/AlpacaD',
+     '-auxiliary_data','IGBLAST/camelid_gl.aux',
      '-num_threads', '32',
-     '-outfmt', '19',  
+     '-outfmt', '19',
 ]
 try:
     subprocess.run(igblast_cmd, check=True)
