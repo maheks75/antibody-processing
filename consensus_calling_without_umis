@@ -1,3 +1,4 @@
+#NOTE THE INPUT IS THE SORTED FILE READS ARRANGED IN DESENDING ORDER OF READS
 #finl_multiprocessing script
 from itertools import zip_longest
 import os
