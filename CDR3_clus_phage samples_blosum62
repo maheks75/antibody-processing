@@ -38,7 +38,6 @@ def process_file(input_filename, matrix_dict):
 
     remain_list = input_slist.copy()
     #print(remain_list)
-    # Create output directory based on the input file name
     output_dir = os.path.join("output_directory_fullseq_40cdr", os.path.splitext(os.path.basename(input_filename))[0])
     os.makedirs(output_dir, exist_ok=True)
 
@@ -62,7 +61,6 @@ if __name__ == "__main__":
     import numpy as np
     import ast
     alph = seq.ProteinSequence.alphabet
-    # Load the standard protein substitution matrix, which is BLOSUM62
     matrix = align.SubstitutionMatrix.std_protein_matrix()
 
 
@@ -71,9 +69,8 @@ if __name__ == "__main__":
     matrix = align.SubstitutionMatrix(alph, alph, matrix_dict)
 
     scores = np.identity(len(alph), dtype=int)
-    matrix = align.SubstitutionMatrix(alph, alph, scores)   # Define your matrix_dict here
-    input_directory = "cdr"  # Change this to your input directory
-
+    matrix = align.SubstitutionMatrix(alph, alph, scores)   
+    input_directory = "cdr" 
     for filename in os.listdir(input_directory):
         if filename.endswith(".txt"):
             input_filepath = os.path.join(input_directory, filename)
