@@ -1,0 +1,205 @@
+#the mismatch that works for length of 14 and above is 6
+#the mismatch that works for length of 13-11 and above is 4
+#the mismatch that works for length of 8-10 and above is 3
+#the mismatch that works for length of 5-7 and above is 1
+#step1
+
+import os
+os.chdir('/home/mahek0424/basespace/primer/')
+#step2
+import pandas as pd
+
+data = pd.read_csv('processed_igblast_147_output_file.csv')
+
+col_cdr = data['cdr3_aa']
+col_seqs = data['sequence_aa']
+
+with open('len7_Full_seq.fasta', 'w') as file:
+    for j, (co, se) in enumerate(zip(col_cdr, col_seqs)):
+        if '*' not in str(se) and str(co) != 'nan':
+            if len(str(co)) <= 7 and len(str(co)) >= 5:
+                header = f'seq{j + 1}'
+                file.write(f'>{header}\n{co}\n')
+
+#step2 part2
+
+import pandas as pd
+
+data = pd.read_csv('processed_igblast_147_output_file.csv')
+
+col_cdr = data['cdr3_aa']
+col_seqs = data['sequence_aa']
+
+with open('len14_Full_seq.fasta', 'w') as file:
+    for j, (co, se) in enumerate(zip(col_cdr, col_seqs)):
+        if '*' not in str(se) and str(co) != 'nan':
+            if len(str(co)) >= 14:
+                header = f'seq{j + 1}'
+                file.write(f'>{header}\n{co}\n')
+#DO STEP 3 TO STEP 7 FOR LEN FILE IE >14, >11-<13, >8-<10, >5-<7
+#step3
+
+import subprocess
+
+fasta_file = "len14_Full_seq.fasta"
+output_file = "trimmed--dedupWcount.txt"
+
+command = "cat {} | grep -v '>' | sort | uniq -c > {}".format(fasta_file, output_file)
+subprocess.run(command, shell=True, check=True)
+
+
+#step4
+
+import subprocess
+
+fasta_file = "trimmed--dedupWcount.txt"
+output_file = "14.fna"
+
+command = "cat %s| nl -w 1 -s '-' | sed 's/ /_/g' | sed 's/__/_/g' | sed 's/__/_/g' | sed 's/__/_/g' | sed 's/-_/-/g' | awk -F '_' '{print \">\"$1\"\\n\"$2}' > %s" % (fasta_file, output_file)
+subprocess.run(command, shell=True, check=True)
+
+
+#step5
+
+from collections import OrderedDict
+
+# Read the sequences from the FASTA file
+with open("14.fna", "r") as file:
+    sequences = OrderedDict()
+    header = ""
+    sequence = ""
+    for line in file:
+        line = line.strip()
+        if line.startswith(">"):
+            if header and sequence:
+                sequences[header] = sequence
+            header = line[1:]  # Remove the ">" from the header
+            sequence = ""
+        else:
+            sequence += line
+
+    # Add the last sequence to the dictionary
+    if header and sequence:
+        sequences[header] = sequence
+
+# Sort the sequences based on the number after the hyphen
+sorted_sequences = sorted(sequences.items(), key=lambda x: int(x[0].split("-")[-1]), reverse=True)
+
+# Write the sorted sequences to a new file
+with open("14.fasta", "w") as file:
+    for header, sequence in sorted_sequences:
+        file.write(">" + header + "\n")
+        file.write(sequence + "\n")
+
+#step6
+
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+ 
+def mismatch_within_threshold(seq1, seq2, threshold=7):
+    """Check if two sequences have mismatches within the given threshold."""
+    if len(seq1) != len(seq2):
+        return False  # Sequences of different lengths are not considered matching
+    
+    mismatch_count = 0
+    for c1, c2 in zip(seq1, seq2):
+        if c1 != c2:
+            mismatch_count += 1
+            if mismatch_count > threshold:
+                return False
+    return True
+ 
+def process_fasta(input_file):
+    """Process a FASTA file to find and separate sequences with one mismatch or less."""
+    sequences = list(SeqIO.parse(input_file, "fasta"))
+    
+    while sequences:
+        first_seq_record = sequences[0]
+        #print(first_seq_record)
+        first_seq = str(first_seq_record.seq)
+        matching_seqs = [first_seq_record]
+        non_matching_seqs = []
+ 
+        for seq_record in sequences[1:]:
+            if mismatch_within_threshold(first_seq, str(seq_record.seq)):
+                matching_seqs.append(seq_record)
+            else:
+                non_matching_seqs.append(seq_record)
+        if not os.path.exists("7mm14_AL"):
+            os.makedirs("7mm14_AL")
+        output_file = os.path.join("7mm14_AL", f"{first_seq}_matches_{len(matching_seqs)}")
+        SeqIO.write(matching_seqs, output_file, "fasta")
+ 
+        sequences = non_matching_seqs
+if __name__ == "__main__":
+    input_file = "14.fasta"
+    # Replace with your input file name
+    process_fasta(input_file)
+
+#step7- for editing the filenames with seq count
+
+import os
+ 
+def process_files(folder_path):
+    # Iterate over all files in the specified folder
+    for filename in os.listdir(folder_path):
+        # Construct full file path
+        file_path = os.path.join(folder_path, filename)
+        
+        # Ensure it's a file before processing
+        if os.path.isfile(file_path):
+            total_sum = 0
+            
+            # Open and read the file
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+                
+                # Process each line in the file
+                for line in lines:
+                    # Strip any leading/trailing whitespace and split by space
+                    parts = line.strip().split()
+                    if len(parts) >= 1:
+                        # Extract the number after the hyphen
+                        try:
+                            hyphen_index = parts[0].index('-')
+                            number_after_hyphen = int(parts[0][hyphen_index + 1:])
+                            # Add to the total sum
+                            total_sum += number_after_hyphen
+                        except ValueError:
+                            continue
+                        except IndexError:
+                            continue
+            
+            # Construct new filename with sum appended
+            name, ext = os.path.splitext(filename)
+            new_filename = f"{name}_{total_sum}{ext}"
+            new_file_path = os.path.join(folder_path, new_filename)
+            
+            # Rename the file
+            os.rename(file_path, new_file_path)
+            print(f"Renamed '{filename}' to '{new_filename}'")
+ 
+# Specify the folder path
+folder_path = '/home/mahek0424/basespacedata/AL147unsel_L001_ds.8c6c64d64db248298c7e5cb08d26ca28/7mm14_AL/'
+ 
+# Call the function to process files in the folder
+process_files(folder_path)
+
+#step8
+
+import os
+import pandas as pd
+dirpath = '/home/mahek0424/basespace/AL121122BovineIgG_L001_ds.0a8b93e73ebb4b35b651756e1c519fae/mm_dirs_AL121///'
+file_name_list = []
+for item in os.listdir(dirpath):
+    new_dir = os.path.join(dirpath,item)
+    for file in os.listdir(new_dir):
+        file_name = file.split('_')
+        file_name0 = file_name[0]
+        file_name1 = file_name[3]
+        file_name_list.append([file_name0, file_name1])
+df = pd.DataFrame(file_name_list, columns=['rep_seq', 'family_members'])
+csv_file_path = '/home/mahek0424/basespace/il8/mm_dirs/final_121.csv'
+df.to_csv(csv_file_path, index=False)
+        
