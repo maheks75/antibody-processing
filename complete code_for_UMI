@@ -55,8 +55,6 @@ with open(input_4g_txt_file, "r") as file, open(output_file_4G, 'w') as output_h
 #STEP3
 filename_5G = "MERGEDAL_t_With5G_Extracted.txt"
 filename_4G = "MERGEDAL_t_With4G_Extracted.txt"
-
-# Read the strings from the file
 with open(filename_5G, 'r') as file_5G:
     strings_5G = [line.strip() for line in file_5G]
 
@@ -75,16 +73,12 @@ non_repeating_filename_5G = "nonrepeating_5g.txt"
 
 repeating_strings_5G = []
 non_repeating_strings_5G = []
-
-# Separate repeating and non-repeating strings
 for string_5G, count_5G in string_count_5G.items():
     if count_5G > 1:
         repeating_strings_5G.append((string_5G, count_5G))
         repeating_strings_count_5G += count_5G
 repeating_strings_5G.sort(key=lambda x: x[1], reverse=True)
 
-
-# Write repeating strings to file with count
 with open(repeating_filename_5G, 'w') as file_5G:
     for string_5G, count_5G in repeating_strings_5G:
         file_5G.write(f"{string_5G}: {count_5G}\n")
@@ -107,15 +101,12 @@ non_repeating_filename_4G = "nonrepeating_4g.txt"
 repeating_strings_4G = []
 non_repeating_strings_4G = []
 
-# Separate repeating and non-repeating strings
 for string_4G, count_4G in string_count_4G.items():
     if count_4G > 1:
         repeating_strings_4G.append((string_4G, count_4G))
         repeating_strings_count_4G += count_4G
 repeating_strings_4G.sort(key=lambda x: x[1], reverse=True)
 
-
-# Write repeating strings to file with count
 with open(repeating_filename_4G, 'w') as file:
     for string_4G, count_4G in repeating_strings_4G:
         file.write(f"{string_4G}: {count_4G}\n")        
@@ -177,7 +168,6 @@ file2_path = 'A_multiplestrings_4g.txt'
 file1_strings = read_text_file(file1_path)
 file2_strings = read_text_file(file2_path)
 
-# Find the common strings
 common_strings = set(file1_strings).intersection(file2_strings)
 unique_string = []
 # Print the common strings
@@ -273,10 +263,8 @@ strings_file_path = "sequence_list.txt"
 with open(strings_file_path, 'r') as strings_file:
     umi_strings = [line.strip() for line in strings_file]
 
-# Create a new "umi" column and add strings
 df.insert(1, 'umi', umi_strings[:len(df)])
 
-# Keep columns 0 to 54
 df = df.iloc[:, :55]
 
 # EXAMINE DOUBLE HASTAGGED STEPS BELOW IF THE ARE NEEDED OR NOT
@@ -287,13 +275,10 @@ df = df.iloc[:, :55]
 # Load the CSV file into a DataFrame
 ##df = pd.read_csv(tsv_file_path, sep='\t')
 
-# Select the columns of interest
-# Specify the column numbers you want to select
 selected_columns = [0,1,2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]
 
 selected_df = df.iloc[:, selected_columns]
 #print(selected_df)
-# Group by the "sequence_aa" column and aggregate other columns
 aggregation_dict = selected_df.groupby('sequence_aa').agg({
                    selected_df.columns[0]: 'sum',
                    selected_df.columns[1]: 'unique',
@@ -351,9 +336,7 @@ aggregation_dict = selected_df.groupby('sequence_aa').agg({
 ).reset_index()
 
 aggregation_dict.to_csv('igblast_output_file.tsv', sep='\t', index=False)
-# Create a DataFrame with your UMI data
 df = pd.read_csv('igblast_output_file.tsv', sep='\t')
 #print(df.columns)
-# Split the UMI strings by space and count the number of strings
 df['Number_of_Strings'] = df['umi'].apply(lambda x: len(x.split()))
 df.to_csv('Final_processed_igblast_file.tsv', sep='\t', index = False)
