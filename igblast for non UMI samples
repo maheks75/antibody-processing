@@ -60,7 +60,7 @@ import pandas as pd
 import sys
 # Load the TSV file into a DataFrame
 tsv_file_path = '4IL7_try_igblast_output.tsv'
-df = pd.read_csv(tsv_file_path)
+df = pd.read_csv(tsv_file_path, sep='\t')
 
 df = df.iloc[:, :53]
 print(len(df.columns))
@@ -126,10 +126,10 @@ aggregation_dict = selected_df.groupby('sequence_aa').agg({
 ).reset_index()
 
 
-aggregation_dict.to_csv('igblast_output_try_file.tsv', index=False)
+aggregation_dict.to_csv('igblast_output_try_file.csv', index=False)
 # Create a DataFrame with your UMI data
-df = pd.read_csv('igblast_output_try_file.tsv')
+df = pd.read_csv('igblast_output_try_file.csv')
 #print(df.columns)
 # Split the UMI strings by space and count the number of strings
 #df['Number_of_Strings'] = df['umi'].apply(lambda x: len(x.split()))
-df.to_csv('il7_Final_processed_igblast_file.tsv',index = False)
+df.to_csv('il7_Final_processed_igblast_file.csv')
