@@ -73,16 +73,14 @@ with open("14.fna", "r") as file:
         if line.startswith(">"):
             if header and sequence:
                 sequences[header] = sequence
-            header = line[1:]  # Remove the ">" from the header
+            header = line[1:]  
             sequence = ""
         else:
             sequence += line
 
-    # Add the last sequence to the dictionary
     if header and sequence:
         sequences[header] = sequence
 
-# Sort the sequences based on the number after the hyphen
 sorted_sequences = sorted(sequences.items(), key=lambda x: int(x[0].split("-")[-1]), reverse=True)
 
 # Write the sorted sequences to a new file
@@ -100,7 +98,7 @@ from Bio.SeqRecord import SeqRecord
 def mismatch_within_threshold(seq1, seq2, threshold=7):
     """Check if two sequences have mismatches within the given threshold."""
     if len(seq1) != len(seq2):
-        return False  # Sequences of different lengths are not considered matching
+        return False 
     
     mismatch_count = 0
     for c1, c2 in zip(seq1, seq2):
@@ -134,7 +132,6 @@ def process_fasta(input_file):
         sequences = non_matching_seqs
 if __name__ == "__main__":
     input_file = "14.fasta"
-    # Replace with your input file name
     process_fasta(input_file)
 
 #step7- for editing the filenames with seq count
@@ -142,48 +139,45 @@ if __name__ == "__main__":
 import os
  
 def process_files(folder_path):
-    # Iterate over all files in the specified folder
     for filename in os.listdir(folder_path):
-        # Construct full file path
         file_path = os.path.join(folder_path, filename)
         
-        # Ensure it's a file before processing
         if os.path.isfile(file_path):
             total_sum = 0
             
-            # Open and read the file
+            
             with open(file_path, 'r') as file:
                 lines = file.readlines()
                 
-                # Process each line in the file
+                
                 for line in lines:
-                    # Strip any leading/trailing whitespace and split by space
+                    
                     parts = line.strip().split()
                     if len(parts) >= 1:
-                        # Extract the number after the hyphen
+                       
                         try:
                             hyphen_index = parts[0].index('-')
                             number_after_hyphen = int(parts[0][hyphen_index + 1:])
-                            # Add to the total sum
+                            
                             total_sum += number_after_hyphen
                         except ValueError:
                             continue
                         except IndexError:
                             continue
             
-            # Construct new filename with sum appended
+            
             name, ext = os.path.splitext(filename)
             new_filename = f"{name}_{total_sum}{ext}"
             new_file_path = os.path.join(folder_path, new_filename)
             
-            # Rename the file
+            
             os.rename(file_path, new_file_path)
             print(f"Renamed '{filename}' to '{new_filename}'")
  
-# Specify the folder path
+
 folder_path = '/home/mahek0424/basespacedata/AL147unsel_L001_ds.8c6c64d64db248298c7e5cb08d26ca28/7mm14_AL/'
  
-# Call the function to process files in the folder
+
 process_files(folder_path)
 
 #step8
