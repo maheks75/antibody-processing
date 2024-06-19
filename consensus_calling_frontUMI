@@ -6,7 +6,6 @@ import sys
 def process_string(string, seq_number):
     sequences = []
     
-    # Open the output file within the process_string function
     with open('consensus_5g.txt', "a") as outfile:
         for record in SeqIO.parse(input_fastq_file, "fastq"):
             sequence = str(record.seq)
@@ -15,7 +14,7 @@ def process_string(string, seq_number):
         if sequences:
             consensus_sequence = calculate_consensus(sequences)
             percentage_low_mismatch = calculate_percentage_low_mismatch(sequences, consensus_sequence) 
-            sequence_header = f">Seq{seq_number.value}"  # Access the shared seq_number using .value
+            sequence_header = f">Seq{seq_number.value}" 
             outfile.write(f"> {len(sequences)} : {string} : {percentage_low_mismatch}\n{consensus_sequence}\n")
             seq_number.value += 1
 
