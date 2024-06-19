@@ -58,7 +58,6 @@ except subprocess.CalledProcessError as e:
 #igblast for phage samples
 import pandas as pd
 import sys
-# Load the TSV file into a DataFrame
 tsv_file_path = '4IL7_try_igblast_output.tsv'
 df = pd.read_csv(tsv_file_path, sep='\t')
 
@@ -70,7 +69,6 @@ print(list(enumerate(selected_df.columns)))
 selected_df = df.iloc[:, selected_columns]
 
 #print(selected_df)
-# Group by the "sequence_aa" column and aggregate other columns
 aggregation_dict = selected_df.groupby('sequence_aa').agg({
                    selected_df.columns[0]: 'sum',
                    selected_df.columns[1]: 'unique',
@@ -127,9 +125,7 @@ aggregation_dict = selected_df.groupby('sequence_aa').agg({
 
 
 aggregation_dict.to_csv('igblast_output_try_file.csv', index=False)
-# Create a DataFrame with your UMI data
 df = pd.read_csv('igblast_output_try_file.csv')
 #print(df.columns)
-# Split the UMI strings by space and count the number of strings
 #df['Number_of_Strings'] = df['umi'].apply(lambda x: len(x.split()))
 df.to_csv('il7_Final_processed_igblast_file.csv')
