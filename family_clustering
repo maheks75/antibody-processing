@@ -1,132 +1,19 @@
-#seprate cdrs from the igblast file
-length_cdr3 = {}
-asterisk_cdr3 = []
+#step2
+import pandas as pd
 
-with open("cdr3_al121.txt", 'r') as file:
-    lines = [line.strip() for line in file]
+data = pd.read_csv('F_igblast_IL_8_output_file.csv')
 
-for line in lines:
-    length = len(line)
-    
-    if '*' in line:
-        asterisk_cdr3.append(line)
-    else:
-        if length in length_cdr3:
-            length_cdr3[length].append(line)
-        else:
-            length_cdr3[length] = [line]
-count = 0
-for length, cdr3_list in length_cdr3.items():
-    count += 1
-    name = f"{length}_{len(cdr3_list)}_cdr3.txt"
-    with open(name, "w") as file:
-        file.write(f"{cdr3_list}\n")
-with open("asterisk_cdr3.txt", "w") as file:
-    file.write(f"{asterisk_cdr3}\n")
+col_cdr = data['cdr3_aa']
+col_seqs = data['sequence_aa']
 
-#script for separating the cdr of a fixed length according to the sum of the dictionaries. 
-import biotite.sequence as seq
-import biotite.sequence.align as align
-import numpy as np
-import ast
-import os
+with open('Full_seq.txt', 'w') as file:
+    for j, (co, se) in enumerate(zip(col_cdr, col_seqs)):
+        if '*' not in str(se) and str(co) != 'nan':
+            header = f'seq{j + 1}'
+            file.write(f'{co}\n')
 
-alph = seq.ProteinSequence.alphabet
-matrix_dict = align.SubstitutionMatrix.dict_from_db("BLOSUM62")
-#matrix_dict[("P", "Y")] = 100
-matrix = align.SubstitutionMatrix(alph, alph, matrix_dict)
-#print(matrix_dict)
-scores = np.identity(len(alph), dtype=int)
-matrix = align.SubstitutionMatrix(alph, alph, scores)
-
-with open("17_977_cdr3.txt", "r") as file:
-    input_list = [line.strip() for line in file]
-#print(lines)
-
-output_directory = "ot"
-os.makedirs(output_directory, exist_ok=True)  # Create the directory if it doesn't exist
-
-for i in range(len(input_list)):
-    first_ele = input_list[i] 
-    #print(first_ele)
-    sum_list = []
-    output_filename = os.path.join(output_directory, f"{first_ele}.txt")
-    with open(output_filename, "w") as file:
-        for j in range(len(input_list)):
-            current_dict = {}
-            if input_list[j] != first_ele:
-                current_ele = input_list[j]
-                
-                for fe, ce in zip(first_ele, current_ele):                        
-                    #print(first_ele, fe)
-                    #print(current_ele, ce)
-                    current_dict.setdefault((fe, ce), 0)
-                    current_dict[fe, ce] += 1
-                    #current_dict[(fe, ce)] = current_dict.get((fe, ce), 0) + matrix_dict.get((fe, ce), 0)
-                    #current_dict = {(fe, ce): matrix_dict.get((fe, ce)) for fe, ce in zip(first_ele, current_ele)}
-                     
-                #print(current_dict)
-                multiplied_dict = {}
-                for key, value in current_dict.items():
-                    matrix_value = matrix_dict.get(key, 0)
-                    multiplied_dict[key] = value * matrix_value
-                    dict_values = multiplied_dict.values()
-                    dict_sum = sum(dict_values)
-                sum_list.append(dict_sum)
-        print(sum_list)
-        sum_it = sorted(sum_list, reverse = True)
-        print(sum_it)
-        for su in sum_it:
-            file.write(f"{su}\n")
-import biotite.sequence as seq
-import biotite.sequence.align as align
-import numpy as np
-import ast
-import os
-
-alph = seq.ProteinSequence.alphabet
-matrix_dict = align.SubstitutionMatrix.dict_from_db("BLOSUM62")
-#matrix_dict[("P", "Y")] = 100
-matrix = align.SubstitutionMatrix(alph, alph, matrix_dict)
-#print(matrix_dict)
-scores = np.identity(len(alph), dtype=int)
-matrix = align.SubstitutionMatrix(alph, alph, scores)
-
-with open("cdr3test.txt", "r") as file:
-    input_list = [line.strip() for line in file]
-#print(lines)
-
-output_directory = "ot"
-os.makedirs(output_directory, exist_ok=True)  # Create the directory if it doesn't exist
-
-for i in range(len(input_list)):
-    first_ele = input_list[i] 
-    #print(first_ele)
-    sum_list = []
-    output_filename = os.path.join(output_directory, f"{first_ele}.txt")
-    with open(output_filename, "w") as file:
-        for j in range(len(input_list)):
-            current_dict = {}
-            if input_list[j] != first_ele:
-                current_ele = input_list[j]
-                
-                for fe, ce in zip(first_ele, current_ele):                        
-                    #print(first_ele, fe)
-                    #print(current_ele, ce)
-                    current_dict.setdefault((fe, ce), 0)
-                    current_dict[fe, ce] += 1
-                    #current_dict[(fe, ce)] = current_dict.get((fe, ce), 0) + matrix_dict.get((fe, ce), 0)
-                    #current_dict = {(fe, ce): matrix_dict.get((fe, ce)) for fe, ce in zip(first_ele, current_ele)}
-                     
-                print("cd", current_dict)
-                multiplied_dict = {}
-                for key, value in current_dict.items():
-                    matrix_value = matrix_dict.get(key, 0)
-                    multiplied_dict[key] = value * matrix_value
-                    dict_values = multiplied_dict.values()
-                    dict_sum = sum(dict_values)
-                file.write(f"{multiplied_dict}..........{dict_sum}\n")    
-#script for family selection for the whole set of cdrs while excluding the ones present in the families.
+#FINAL script for family selection for the whole set of cdrs while excluding the ones present in the families.
+#step3(score 20 worked for phage samples)
 import os
 import ast
 
@@ -139,10 +26,11 @@ def process_element(first_element, current_element, matrix_dict):
     for key, value in current_dict.items():
         matrix_value = matrix_dict.get(key, 0)
         multiplied_dict[key] = value * matrix_value        
-    dict_values = multiplied_dict.values()
+    dict_values = multiplied_dict.values()   
     dict_sum = sum(dict_values)
-    print(f"Multiplied Dict for {first_element}: {multiplied_dict}: {dict_sum}: {input_list}")
-    return dict_sum > -3
+    #dict_sum = round(sum(dict_values)/len(first_element),2)
+    #print(f"Multiplied Dict for {dict_sum}")
+    return dict_sum > 5600.0
 
 def process_file(input_filename, matrix_dict):
     with open(input_filename, 'r') as file:
@@ -151,24 +39,21 @@ def process_file(input_filename, matrix_dict):
     remain_list = input_slist.copy()
     #print(remain_list)
     # Create output directory based on the input file name
-    output_dir = os.path.join("output_directory", os.path.splitext(os.path.basename(input_filename))[0])
+    output_dir = os.path.join("output_directory_fullseq_40cdr", os.path.splitext(os.path.basename(input_filename))[0])
     os.makedirs(output_dir, exist_ok=True)
 
     while remain_list:
         first_element = remain_list[0]
-        #print(first_element)
-
         family = [first_element]
-
+        count = 1
         for current_element in remain_list[1:]:
             if process_element(first_element, current_element, matrix_dict):
                 family.extend([current_element])
-
-        output_filename = os.path.join(output_dir, f"{first_element}.txt")
+                count += 1
+        output_filename = os.path.join(output_dir, f"{first_element}-{count}.txt")
         with open(output_filename, "w") as file:
             for fa in family:
                 file.write(f"{fa}\n")
-        
         remain_list = [ele for ele in remain_list if ele not in family]
 
 if __name__ == "__main__":
@@ -179,8 +64,7 @@ if __name__ == "__main__":
     alph = seq.ProteinSequence.alphabet
     # Load the standard protein substitution matrix, which is BLOSUM62
     matrix = align.SubstitutionMatrix.std_protein_matrix()
-#print("\nBLOSUM62\n")
-#print(matrix)
+
 
     matrix_dict = align.SubstitutionMatrix.dict_from_db("BLOSUM62")
     #matrix_dict[("P","Y")] = 100
