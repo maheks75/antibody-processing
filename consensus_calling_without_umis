@@ -1,48 +1,26 @@
 #NOTE THE INPUT IS THE SORTED FILE READS ARRANGED IN DESENDING ORDER OF READS
-#finl_multiprocessing script
+#PART1_SPLIT_THE_FILE
+
 from itertools import zip_longest
 import os
+import time
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import ProcessPoolExecutor
 import shutil
 from multiprocessing import Pool, Manager
+start_time = time.time()
 def grouper(n, iterable, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
     args = [iter(iterable)] * n
     return zip_longest(fillvalue=fillvalue, *args)
 
-def calculate_con_total(segments, num_seq):  
-    print(len(segments))
-    #print(num_seq)
-    con_total = []
-    #print(passed_segment)
-    for p in segments:
-        #print([p])
-        consensus_sequence = ""
-        BASES_CALCULATE = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
-        bases = ["A", "C", "G", "T", "N"]
-        for k in range(len(p)):
-            for base in bases:
-                BASES_CALCULATE[base] = 0
-            for j in range(len(segments)):
-                if len(segments[j]) > k:
-                    base = segments[j][k]
-                    BASES_CALCULATE[base] += 1
-            most_common_base = max(BASES_CALCULATE, key=BASES_CALCULATE.get)
-            consensus_sequence += most_common_base
-    #print([consensus_sequence])
-    con_total.append(consensus_sequence)
-    #print(con_total)
-    return con_total
-
 def process_file(folder_name, sequence_with_max_count, n):
     passed = []
     failed = []
 
-    import os
-    passed = []
     for filename in os.listdir(folder_name):
+        #print(filename)
         if filename.endswith(".txt"):
             filepath = os.path.join(folder_name, filename)
             with open(filepath, 'r') as file_2:
@@ -52,76 +30,40 @@ def process_file(folder_name, sequence_with_max_count, n):
                     mismatch_count = 0
                     if len(seq) == len(sequence_with_max_count):
                         mismatch_count = sum(1 for i in range(len(seq)) if seq[i] != sequence_with_max_count[i])
+
                         if mismatch_count <= n:
                             passed.append(line)
                         else:
                             failed.append(line)
                     else:
                         failed.append(line)
-    result_filename = f'{max_key}.txt'
-    result_filepath = os.path.join(folder_name, result_filename)
+
+    result_filename = f'{max_key}_{len(remain_strings)}.txt'
+    result_filepath = os.path.join('/mnt/storage-HDD01/1.scrach/immuno-mahek/il10/result/' + result_filename)
     with open(result_filepath, 'w') as file_2:
         for p in passed:
-            file_2.write(f'{p}\n')
+            file_2.write(f'{p}_maxkey{max_key}\n')
+
+    final_passed = [p.split(':')[0] for p in passed]
+
+    return final_passed, failed
 
     import concurrent.futures
-    l = 40
+    l = 32
     final_passed = []
-    for p in passed:    
+    for p in passed:
         seq_p = p.split(':')[0]
         final_passed.append(seq_p)
-        #print(final_passed)
-    def create_seg(final_passed, n):
-        num_seq = len(final_passed)
-        #print(num_seq)
-        max_len = max(len(seq) for seq in final_passed)
-        m = max_len // l
-        segments = []
-        count_seg =0
-        for i in range(0, max_len, m):
-            segment = [seq[i:i + m] for seq in final_passed]
-            segments.append(segment)
-            count_seg += 1
-    
-        return segments, num_seq
 
-    
-
-    def part_2(segments, num_seq):
-        import concurrent.futures
-        num_cores = 48 # You can adjust this based on your machine's capabilities
-    
-        with Manager() as manager:
-            num_seq = manager.Value('k', 1)  # Create a shared integer variable
-        
-            with Pool(processes=num_cores) as pool:
-                 con_totals = pool.starmap(calculate_con_total, [(segments, num_seq) for segments in segments])
-
-
-        final_con = ""
-        for con_total in con_totals:
-            for c in con_total:
-                final_con += c
-        #print(final_con)
-        return final_con
-    
-    segments, num_seq = create_seg(final_passed, n)
-    num_seq = create_seg(final_passed, n)
-    result_0 = part_2(segments, num_seq)
-    #print(result_0)
-    header = f'N_{n}:SeqCount_{len(passed)}:MaxKey_{max_key}'
-    
-    return f'>{header}\n{result_0}\n', failed
-
-with open('sorted_test.txt', 'r') as file:
+with open('sorted_il10.txt', 'r') as file:
     strings = [line.strip() for line in file]
 
 remain_strings = strings.copy()
 
-total_files = 40
+total_files = 32
 lines_per_file = len(remain_strings) // total_files + 1
 file_counter = 1
-with open('con_file', 'a') as file:
+with open('il7_con.txt', 'a') as file:
     while remain_strings:
         count_passed = 0
         count_1 = 0
@@ -130,27 +72,27 @@ with open('con_file', 'a') as file:
         count = [int(line.split(':')[1].strip()) for line in remain_strings]
 
         max_key = max(count)
-        if max_key == 20:
-            print('max_key less than 20')
+        if max_key < 20:
+            print('max_key is less than 20')
             break
 
         n = 3 if max_key in range(2, 400) else 4 if max_key in range(410, 1000) else 5 if max_key > 1000 else 10
         sequence_with_max_count = sequence[count.index(max(count))]
-
         lines_per_file = len(remain_strings) // total_files + 1
         folder_name = f"{max_key}_{len(remain_strings)}_files"
         os.makedirs(folder_name, exist_ok=True)
         for file_counter, lines_chunk in enumerate(grouper(lines_per_file, remain_strings), start=1):
             lines_chunk = [line for line in lines_chunk if line is not None]
             lines_to_write = len(lines_chunk)
-           # print(lines_to_write)
-            with tempfile.NamedTemporaryFile('w', delete=False) as fout:
+            temp_file_name = f"temp_{file_counter}_{len(remain_strings)}.txt"
+            with open(os.path.join(folder_name, temp_file_name), 'w') as fout:
                 for s in lines_chunk:
                     fout.write(f'{s}\n')
-        
+
             new_filename = os.path.join(folder_name, f'small_file_{len(lines_chunk)}_{file_counter}.txt')
             shutil.move(fout.name, new_filename)
-        with ThreadPoolExecutor(max_workers=48) as executor:
+        with ThreadPoolExecutor(max_workers=32) as executor:
+
             results = list(executor.map(
                 process_file,
                 [folder_name],
@@ -158,9 +100,80 @@ with open('con_file', 'a') as file:
                 [n]
             ))
 
-        for result, remaining_strings in results:   
-            file.write(f'{result}')
+        for result, remaining_strings in results:
             failed.extend(remaining_strings)
-
         remain_strings = failed.copy()
-        print('BREAK')
+        shutil.rmtree(folder_name)
+end_time = time.time()
+print(f"Script started at: {time.ctime(start_time)}")
+print(f"Script ended at: {time.ctime(end_time)}")
+
+#PART_2_CONSENSUS_CALLING
+import os
+from multiprocessing import Pool, Manager
+import time
+def calculate_con_total(seq_list,final_header_list):
+    con_total = []
+    for p in seq_list:
+        consensus_sequence = ""
+        BASES_CALCULATE = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
+        bases = ["A", "C", "G", "T", "N"]
+        for k in range(len(p)):
+            for base in bases:
+                BASES_CALCULATE[base] = 0
+            for j in range(len(seq_list)):
+                if len(seq_list[j]) > k:
+                    base = seq_list[j][k]
+                    BASES_CALCULATE[base] += 1
+            most_common_base = max(BASES_CALCULATE, key=BASES_CALCULATE.get)
+            consensus_sequence += most_common_base
+        for header in final_header_list:
+            print(header)
+            con_total.append(f'>{header}\n{consensus_sequence}')
+
+            return con_total
+
+def process_file(input_file_path):
+
+    with open(input_file_path, 'r') as file_1:
+        seq_list = []
+        seq_count = []
+        header_list = []
+        final_header_list = []
+        for line in file_1:
+            seq = line.split(':')[0].strip()
+            header = line.split(':')[1]
+            seq_count.append(int(header.split('_')[0]))
+        max_key_header = header.split('_')[1]
+        #print(max_key_header)
+        num = sum(seq_count)
+        #print(num)
+        #print('break')
+        seq_list.append(seq)
+        header_list.extend([num, max_key_header])
+        #print(header_list)
+        final_header = ""
+        for i, item in enumerate(header_list):
+            final_header +=  str(item).rstrip("\n")+"_"
+        final_header_list.append(final_header)
+        #print(final_header_list)
+    return calculate_con_total(seq_list,final_header_list)
+
+if __name__ == "__main__":
+    start_time = time.time()
+
+
+    input_dir = '/mnt/storage-HDD01/1.scrach/immuno-mahek/il10/result/'
+    file_list = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith('.txt')]
+
+    num_cores = 8
+    with Pool(processes=num_cores) as pool:
+        results = pool.map(process_file, file_list)
+        print(results)
+    with open('il10_con_file.txt', 'a') as file_con:
+        for result in results:
+            for c in result:
+                file_con.write(f'{c}\n')
+    end_time = time.time()
+    print(f"Script started at: {time.ctime(start_time)}")
+    print(f"Script ended at: {time.ctime(end_time)}")
